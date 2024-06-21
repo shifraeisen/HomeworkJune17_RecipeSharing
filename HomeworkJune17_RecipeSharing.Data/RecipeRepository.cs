@@ -15,13 +15,12 @@ namespace HomeworkJune17_RecipeSharing.Data
         {
             _connectionString = connectionString;
         }
-        public List<Recipe> GetTop3RecentRecipes()
+        public List<Recipe> GetRecipes()
         {
             var context = new RecipesDataContext(_connectionString);
             return context.Recipes.Include(r => r.Category)
                 .OrderByDescending(r => r.DateCreated)
                 .Where(r => r.IsPublic == true)
-                .Take(3)
                 .ToList();
         }
         public List<Category> GetCategories()

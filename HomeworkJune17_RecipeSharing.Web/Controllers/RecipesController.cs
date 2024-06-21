@@ -17,11 +17,11 @@ namespace HomeworkJune17_RecipeSharing.Web.Controllers
         {
             _connectionString = configuration.GetConnectionString("ConStr");
         }
-        [HttpGet("GetTop3RecentRecipes")]
-        public List<Recipe> Get3MostRecent()
+        [HttpGet("GetRecipes")]
+        public List<Recipe> GetRecipes()
         {
             var repo = new RecipeRepository(_connectionString);
-            return repo.GetTop3RecentRecipes();
+            return repo.GetRecipes();
         }
         [HttpGet("GetCategories")]
         public List<Category> GetCategories()
@@ -35,7 +35,7 @@ namespace HomeworkJune17_RecipeSharing.Web.Controllers
             var image = ConvertFromBase64(r.ImageName);
             var fileName = $"{Guid.NewGuid()}";
             r.ImageName = fileName;
-            System.IO.File.WriteAllBytes($"uploads/{fileName}", image);
+            System.IO.File.WriteAllBytes($"uploads/{fileName}.jpg", image);
 
             r.DateCreated = DateTime.Now;
 

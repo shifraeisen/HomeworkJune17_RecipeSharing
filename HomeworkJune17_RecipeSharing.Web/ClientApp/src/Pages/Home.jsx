@@ -7,7 +7,7 @@ const Home = () => {
 
     useEffect(() => {
         const getTop3RecentRecipes = async () => {
-            const { data } = await axios.get('/api/recipes/gettop3recentrecipes');
+            const { data } = await axios.get('/api/recipes/getrecipes');
             setRecipes(data);
             setIsLoading(false);
         };

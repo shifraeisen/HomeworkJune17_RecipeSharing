@@ -2,7 +2,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PuppeteerSharp;
+using RazorLight;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 
 namespace HomeworkJune17_RecipeSharing.Web.Controllers
 {
@@ -16,37 +19,50 @@ namespace HomeworkJune17_RecipeSharing.Web.Controllers
             int indexOfComma = model.Base64Data.IndexOf(',');
             string base64 = model.Base64Data.Substring(indexOfComma + 1);
             byte[] bytes = Convert.FromBase64String(base64);
-            System.IO.File.WriteAllBytes($"uploads/{model.FileName}", bytes);
+            System.IO.File.WriteAllBytes($"uploads/{model.FileName}.jpg", bytes);
         }
 
         [HttpGet("View")]
         public IActionResult View(string img)
         {
-            var bytes = System.IO.File.ReadAllBytes($"uploads/{img}");
+            var bytes = System.IO.File.ReadAllBytes($"uploads/{img}.jpg");
             return File(bytes, "image/jpeg");
             //return File(bytes, "application/octet-stream", fileName);
         }
 
         [HttpGet("GeneratePdf")]
-        public IActionResult GeneratePDF(string name)
+        public async Task<IActionResult> GeneratePDF(string title, string ingredients, string steps, string image)
+
         {
-            var bytes = GeneratePdfAsync(name).Result;
-            return File(bytes, "application/pdf", "hello.pdf");
+            foreach (var i in ingredients.Split(',').ToList())
+            {
+                await Console.Out.WriteLineAsync(i);
+            }
+            await Console.Out.WriteLineAsync(image);
+            var model = new RecipePdfModel
+
+            {
+                Title = title,
+                Ingredients = ingredients.Split(',').ToList(),
+                Steps = steps.Split(",").ToList(),
+                ImageName = $"{image}.jpg"
+            };
+
+            var engine = new RazorLightEngineBuilder()
+
+                .UseFileSystemProject(Path.Combine(Directory.GetCurrentDirectory(), "Pages"))
+                .UseMemoryCachingProvider()
+                .Build();
+
+            string htmlString = await engine.CompileRenderAsync("/RecipePdf.cshtml", model);
+
+            var pdfBytes = await GeneratePdfAsync(htmlString);
+
+            return File(pdfBytes, "application/pdf", $"{title}.pdf");
+
         }
 
-
-        [HttpGet("generatecsv")]
-        public IActionResult GenerateCSV()
-        {
-            string csv = "FirstName,LastName,Age\n" +
-                "John,Doe,45\n" +
-                "Foo,Bar,55\n";
-            byte[] csvBytes = Encoding.UTF8.GetBytes(csv);
-            return File(csvBytes, "text/csv", "people.csv");
-
-        }
-
-        private static async Task<byte[]> GeneratePdfAsync(string name)
+        private static async Task<byte[]> GeneratePdfAsync(string content)
         {
             await new BrowserFetcher().DownloadAsync();
 
@@ -55,7 +71,7 @@ namespace HomeworkJune17_RecipeSharing.Web.Controllers
                 Headless = true
             });
             using var page = await browser.NewPageAsync();
-            await page.SetContentAsync($"<h1>Hello {name}</h1>");
+            await page.SetContentAsync(content);
 
             byte[] bytes = await page.PdfDataAsync(new PdfOptions
             {
